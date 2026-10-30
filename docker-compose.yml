@@ -1,0 +1,29 @@
+
+
+services:
+  # 1. Сервис базы данных PostgreSQL
+  db:
+    image: postgres:15-alpine   # Качаем готовый образ PostgreSQL из интернета
+    environment:
+      POSTGRES_USER: postgres   # Пароли и логины для входа в баз
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"   # Открываем порт наружу, чтобы мы могли подключаться из DBeaver или pgAdmin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data    # Сохраняем данные на жесткий диск, чтобы при перезапуске ПК они не стерли
+
+  # 2. Сервис нашего FastAPI приложения
+  web:
+    build: . # Ищет Dockerfile в текущей папке  # Собери приложение из папки, где лежит Dockerfile
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload  # Команда, с которой запустить сервер
+    ports:
+      - "8000:8000"  # Пробрасываем 8000 порт наружу, чтобы зайти на сайт через браузер
+    environment:
+      # ВАЖНО: Вместо localhost в Docker мы пишем имя сервиса базы данных — "db"
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres   # Говорим приложению, куда подключаться (обрати внимание на имя "db")
+    depends_on:
+      - db    # Сначала запусти базу (`db`), а только потом поднимай наше приложение (`web
+
+volumes:
+  postgres_data:
